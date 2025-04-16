@@ -3,9 +3,10 @@
 NAME_CLASS = "css-10ofhqw"
 MAIN_PAGE_PRICES_CLASS = "css-uj7mm0"
 PRICE_CLASS = "css-fqcbii"
-CONDITION_CLASS = "css-z0m36u"
-SELLER_CLASS = "css-fka1fu"
-domain = None
+CONDITION_CLASS = "css-19duwlz"
+SELLER_CLASS = "css-eaigk1"
+domain = "kz"
+
 
 # UA set as default
 countryDomain = {
@@ -20,22 +21,21 @@ countryDomain = {
 
 # USD set as default
 currencyDict = {
-    "UAH" : "?currency=UAH",
-    "USD" : "?currency=USD",
-    "EUR" : "?currency=EUR",
-    "BGN" : "?currency=BGN",
-    "PLN" : "?currency=PLN",
-    "EUR" : "?currency=EUR",
-    "RON" : "?currency=RON",
-    "KZT" : "?currency=KZT",
-    "UZS" : "?currency=UZS"
+    "UAH": "?currency=UAH",
+    "USD": "?currency=USD",
+    "EUR": "?currency=EUR",
+    "BGN": "?currency=BGN",
+    "PLN": "?currency=PLN",
+    "RON": "?currency=RON",
+    "KZT": "?currency=KZT",
+    "UZS": "?currency=UZS"
 }
 
 # ALL set as default
 conditionDict = {
-    "all" : "",
-    "new" : "?search[filter_enum_state][0]=new",
-    "used" : "?search[filter_enum_state][0]=used"
+    "all": "",
+    "new": "?search[filter_enum_state][0]=new",
+    "used": "?search[filter_enum_state][0]=used"
 }
 
 # headers for request
@@ -49,8 +49,6 @@ headers = {
 }
 
 
-
-
 def help():
     print("Available country domains:")
     print(', '.join(countryDomain))
@@ -61,8 +59,10 @@ def help():
     print("\nAvailable currencies:")
     print(', '.join(currencyDict.keys()))
 
+
 def main() -> None:
     print(help())
+
 
 if __name__ == "__main__":
     main()

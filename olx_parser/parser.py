@@ -1,139 +1,93 @@
 from bs4 import BeautifulSoup
-from .utils import _fetch_url, _json_save, _get_prices
-from .config import *
+from typing import List, Optional, Dict
+from tqdm import tqdm
+from olx_parser.utils import _fetch_url, _json_save, _get_prices
+from olx_parser.config import *
 
 
-
-# gets every link on the website
-def _parse_links(soup) -> list:
-
-    links = set() # is set to avoid duplicates
+def _parse_links(soup: BeautifulSoup) -> List[str]:
     items = soup.find_all("a", class_="css-1tqlkj0")
+    return list({
+        f"https://olx{domain}{item.get('href')}"
+        for item in items if item.get("href")
+    })
 
-    # building url and adding to links set
-    for item in items:
-        href = item.get("href")
-        if href:
-            links.add(f"https://olx{domain}{href}")
-        
-    return list(links)
 
-def parse_items(soup) -> None:
-    '''
-    
-    Parses item data from the OLX page and saves the extracted info as JSON.
-
-    This function extracts all item links from the main page,
-    fetches each item's detailed page, parses specific data fields
-    (name, price, condition, seller, link), and saves the collected
-    data into a JSON file.
-
-    Parameters
-    ----------
-    soup: BeautifulSoup
-        Parsed HTML of the OLX listing page.
-
-    Returns
-    -------
-    None
-        This function does not return anyting. Results are saved
-        using the `json_save()` function.
-
-    '''
-
+def _parse_item_page(link: str) -> Optional[Dict[str, str]]:
+    soup = _fetch_url(link)
     if not soup:
         return None
 
+    try:
+        name_tag = soup.find("h4", attrs=NAME_CLASS)
+        price_tag = soup.find("h3", attrs=PRICE_CLASS)
+        description_tag = soup.find("div", attrs=CONDITION_CLASS)
+        seller_tag = soup.find("a", attrs=SELLER_CLASS)
+
+        # Проверяем, чего именно не хватает
+        missing = []
+        if not name_tag:
+            missing.append("название")
+        if not description_tag:
+            missing.append("состояние")
+        if not seller_tag:
+            missing.append("продавец")
+
+        if missing:
+            print(f"⚠️ Не удалось извлечь {', '.join(missing)}: {link}")
+            return None
+
+        return {
+            "name": name_tag.text.strip() if name_tag else "Нет названия",
+            "price": price_tag.text.strip() if price_tag else "Нет цены",
+            "description": description_tag.text.strip(),
+            "seller": seller_tag.text.strip(),
+            "link": link
+        }
+
+    except Exception as e:
+        print(f"❌ Ошибка при разборе {link}: {e}")
+        return None
+
+
+def parse_items(soup: BeautifulSoup) -> None:
+    if not soup:
+        print("❌ Нет HTML для обработки.")
+        return
+
     links = _parse_links(soup)
+    print(f"🔗 Найдено ссылок: {len(links)}")
 
     all_data = []
 
-    # open link and get its HTML
-    for link in links:
+    for link in tqdm(links, desc="📦 Парсинг товаров"):
+        item = _parse_item_page(link)
+        if item:
+            all_data.append(item)
+        else:
+            print(f"⚠️ Пропущено: {link}")
 
-        soup = _fetch_url(link)
-        if not soup:
-            continue
-
-        try:
-            name = soup.find("h4", class_=NAME_CLASS)
-            price = soup.find("h3", class_=PRICE_CLASS)
-            condition_tags =soup.find_all("p", class_=CONDITION_CLASS)[1]
-            condition = condition_tags.text.partition(":")[2]
-            seller = soup.find("h4", class_=SELLER_CLASS)
-        except AttributeError:
-            continue
-
-        data = {
-            "name" : name.text.strip(),
-            "price" : price.text.strip(),
-            "condition" : condition.strip(),
-            "seller" : seller.text.strip(),
-            "link" : link
-        }
-
-        all_data.append(data)
-
+    print(f"✅ Успешно обработано: {len(all_data)}")
     _json_save(all_data)
 
 
-
-def average_price(soup: BeautifulSoup):
-    '''
-    Calculate the average price of all items on the OLX page.
-
-    Parameters
-    ----------
-    soup: BeautifulSoup
-        Parsed HTML of the OLX listing page.
-
-    Return
-    -------
-    int
-        Average price of all items, or None is soup is None.
-    
-    '''
+def average_price(soup: BeautifulSoup) -> int:
     if not soup:
-        return None
+        return 0
+
     price_list = _get_prices(soup)
-    return int(sum((price_list))/len(price_list)) if price_list else 0
+    return int(sum(price_list) / len(price_list)) if price_list else 0
 
 
-
-def get_page(query: str, country:str='UA', currency:str='USD', condition:str='all') -> str:
-    """
-    Builds URL for the website and returns the page
-
-    Parameters
-    ----------
-    query: str
-        Name of an item to be searched.
-
-    country: str
-        Country of OLX website.
-        UA set as default.        
-
-    currency: str
-    Currency that all prices on the website will use.
-    USD set as defaut.    
-    
-    condition: str
-        Condition of an item
-        All set as default.
-
-
-    Return
-    -------
-    BeautifulSoup
-        Parsed HTML of the OLX listing page.
-    """
+def get_page(query: str, country: str = 'KZ', currency: str = 'KZT', condition: str = 'all') -> Optional[
+    BeautifulSoup]:
+    from urllib.parse import quote_plus
 
     if not query:
         raise ValueError("The 'query' parameter is required and cannot be empty.")
 
-    #Build the URL
     try:
-        url = f"https://www.olx{countryDomain[country]}/list/q-{"-".join(query.split())}/{currencyDict[currency]}{conditionDict[condition]}"
+        url = f"https://www.olx{countryDomain[country]}/list/astana/q-{quote_plus(query)}/{currencyDict[currency]}{conditionDict[condition]}"
     except KeyError as e:
         print(f"Invalid value of {e}\nUse 'help' function to see available parameters")
         return None
