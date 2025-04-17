@@ -1,3 +1,5 @@
+from urllib.parse import quote_plus
+
 from bs4 import BeautifulSoup
 from typing import List, Optional, Dict
 from tqdm import tqdm
@@ -82,15 +84,16 @@ def average_price(soup: BeautifulSoup) -> int:
     return int(sum(price_list) / len(price_list)) if price_list else 0
 
 
-def get_page(query: str, country: str = 'KZ', currency: str = 'KZT', condition: str = 'all') -> Optional[
-    BeautifulSoup]:
+def get_page(query: str, country: str = 'KZ', currency: str = 'KZT', condition: str = 'all', city: str = 'astana') -> \
+        Optional[
+            BeautifulSoup]:
     from urllib.parse import quote_plus
 
     if not query:
         raise ValueError("The 'query' parameter is required and cannot be empty.")
 
     try:
-        url = f"https://www.olx{countryDomain[country]}/list/astana/q-{quote_plus(query)}/{currencyDict[currency]}{conditionDict[condition]}"
+        url = f"https://www.olx{countryDomain[country]}/list/{city}/q-{quote_plus(query)}/{currencyDict[currency]}{conditionDict[condition]}"
     except KeyError as e:
         print(f"Invalid value of {e}\nUse 'help' function to see available parameters")
         return None
@@ -99,3 +102,59 @@ def get_page(query: str, country: str = 'KZ', currency: str = 'KZT', condition: 
     domain = countryDomain[country]
 
     return _fetch_url(url)
+
+
+def get_all_pages(query: str, country: str = 'KZ', currency: str = 'KZT',
+                  condition: str = 'all', city: str = '') -> List[BeautifulSoup]:
+    """
+    Загружает все страницы OLX по заданному запросу.
+
+    Parameters
+    ----------
+    query : str
+        Ключевое слово (например: iphone).
+    country : str
+        Страна (по умолчанию: 'KZ').
+    currency : str
+        Валюта (по умолчанию: 'KZT').
+    condition : str
+        Состояние товара: 'all', 'used', 'new'
+    city : str
+        Название города (по желанию).
+
+    Returns
+    -------
+    List[BeautifulSoup]
+        Список HTML страниц.
+    """
+
+    pages = []
+    page_number = 1
+    global domain
+    domain = countryDomain[country]
+
+    while page_number <= 3:
+        try:
+            base_path = f"/list/{city}/" if city else "/list/"
+            url = f"https://www.olx{domain}{base_path}q-{quote_plus(query)}/?page={page_number}{currencyDict[currency]}{conditionDict[condition]}"
+            print(f"📄 Загружаем страницу {page_number} → {url}")
+
+            soup = _fetch_url(url)
+            if not soup:
+                print("⚠️ Страница не загрузилась.")
+                break
+
+            items = soup.find_all("div", {"data-cy": "l-card"})
+            if not items:
+                print("🔚 Больше страниц нет.")
+                break
+
+            print(f"  ✅ Найдено {len(items)} объявлений на странице")
+            pages.append(soup)
+            page_number += 1
+
+        except Exception as e:
+            print(f"❌ Ошибка на странице {page_number}: {e}")
+            break
+
+    return pages
