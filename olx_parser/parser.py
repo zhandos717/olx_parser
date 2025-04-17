@@ -22,7 +22,8 @@ def _parse_item_page(link: str) -> Optional[Dict[str, str]]:
         name_tag = soup.find("h4", attrs=NAME_CLASS)
         price_tag = soup.find("h3", attrs=PRICE_CLASS)
         description_tag = soup.find("div", attrs=CONDITION_CLASS)
-        seller_tag = soup.find("a", attrs=SELLER_CLASS)
+        seller_link_tag = soup.find("a", attrs=SELLER_LINK_SELECTOR)
+        seller_name_tag = seller_link_tag.find("h4", class_=SELLER_NAME_CLASS) if seller_link_tag else None
 
         # Проверяем, чего именно не хватает
         missing = []
@@ -30,7 +31,7 @@ def _parse_item_page(link: str) -> Optional[Dict[str, str]]:
             missing.append("название")
         if not description_tag:
             missing.append("состояние")
-        if not seller_tag:
+        if not seller_link_tag:
             missing.append("продавец")
 
         if missing:
@@ -41,7 +42,9 @@ def _parse_item_page(link: str) -> Optional[Dict[str, str]]:
             "name": name_tag.text.strip() if name_tag else "Нет названия",
             "price": price_tag.text.strip() if price_tag else "Нет цены",
             "description": description_tag.text.strip(),
-            "seller": seller_tag.text.strip(),
+            "seller_name": seller_name_tag.text.strip() if seller_name_tag else None,
+            "seller_link": f"https://www.olx.kz{seller_link_tag['href']}" if seller_link_tag and seller_link_tag.has_attr(
+                "href") else None,
             "link": link
         }
 

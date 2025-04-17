@@ -4,7 +4,11 @@ NAME_CLASS = "css-10ofhqw"
 MAIN_PAGE_PRICES_CLASS = "css-uj7mm0"
 PRICE_CLASS = "css-fqcbii"
 CONDITION_CLASS = "css-19duwlz"
-SELLER_CLASS = "css-eaigk1"
+
+SELLER_LINK_SELECTOR = {"data-testid": "user-profile-link"}
+SELLER_NAME_CLASS = "css-fka1fu"
+
+
 domain = "kz"
 
 
