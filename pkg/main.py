@@ -1,6 +1,6 @@
 import time
-from olx_parser.parser import get_page, parse_items, average_price, _parse_links
-from olx_parser.utils import _fetch_url
+from pkg.parser import get_page, parse_items, average_price, _parse_links
+from pkg.utils import _fetch_url
 
 if __name__ == "__main__":
     query = input("Enter search query: ")

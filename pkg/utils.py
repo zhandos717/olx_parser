@@ -4,7 +4,7 @@ import requests
 from pathlib import Path
 from typing import Optional, List, Dict
 from bs4 import BeautifulSoup
-from olx_parser.config import headers, MAIN_PAGE_PRICES_CLASS
+from pkg.config import headers, MAIN_PAGE_PRICES_CLASS
 
 
 def _fetch_url(url: str) -> Optional[BeautifulSoup]:

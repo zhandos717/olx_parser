@@ -1,8 +1,8 @@
 from bs4 import BeautifulSoup
 from typing import List, Optional, Dict
 from tqdm import tqdm
-from olx_parser.utils import _fetch_url, _json_save, _get_prices
-from olx_parser.config import *
+from pkg.utils import _fetch_url, _json_save, _get_prices
+from pkg.config import *
 
 
 def _parse_links(soup: BeautifulSoup) -> List[str]:
